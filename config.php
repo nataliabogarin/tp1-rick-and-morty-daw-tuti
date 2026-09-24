@@ -1,13 +1,9 @@
-<?php
+<?PHP
 
-
-//variables con los datos de la conexion
 $ipBD = "127.0.0.1";
-$usuarioBD = "pruebaconexion"; 
+$usuarioBD = "rick_and_morty"; 
 $claveBD = "root";            
-$nombreBD = "pruebaconexion"; 
-
-// creacion de la conexion
+$nombreBD = "rick_and_morty"; 
 try {
     $conexion = new PDO("mysql:host=" . $ipBD . ";dbname=" . $nombreBD, $usuarioBD, $claveBD);
     
@@ -16,4 +12,5 @@ try {
     
    die("Error al conectar con la base de datos: " . $e->getMessage());
 }
+
 ?>

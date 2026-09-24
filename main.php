@@ -1,27 +1,85 @@
 <?php
 
-include_once 'config.php';
+require_once 'config.php';
 
-// 2. URL de la API externa
-$url_api = "https://rickandmortyapi.com/api/character";
+function obtenerdatos($urlInicial) {
+    $todosLosdatos = [];
+    $urlSiguiente = $urlInicial;
 
-//se guardan los datos de la api en $json datos.
-$json_datos = file_get_contents($url_api);
+    while ($urlSiguiente !== null) {
+        echo "Descargando: " . $urlSiguiente . "...\n";
+        $respuesta = file_get_contents($urlSiguiente);
+        
+        if ($respuesta === false) {
+            echo "Error al descargar: $urlSiguiente\n";
+            break;
+        }
 
-// se guarda el json en la tabla informacion api de la BD
-$sql = "INSERT INTO informacion_api (datos_json) VALUES (:json)";
-$stmt = $conexion->prepare($sql);
-$stmt->bindParam(':json', $json_datos);
-$stmt->execute();
+        $datos = json_decode($respuesta, true);
+        $todosLosdatos = array_merge($todosLosdatos, $datos['results']);
+        $urlSiguiente = $datos['info']['next'];
+    }
+    return $todosLosdatos;
+}
 
-// 5. Sacamos el último registro guardado para comprobar que funcionó
-$sql = "SELECT datos_json FROM informacion_api ORDER BY id DESC LIMIT 1";
-$resultado = $conexion->query($sql)->fetch(PDO::FETCH_ASSOC);
+try {
+  
+    echo "\n--- descargando locations ---\n";
+    $locaciones = obtenerdatos('https://rickandmortyapi.com/api/location');
+    
+    
+    $stmtLoc = $conexion->prepare("INSERT IGNORE INTO LOCATION (id_location, name, type, dimension) VALUES (?, ?, ?, ?)");
+    
+    foreach ($locaciones as $locacion) {
+        $stmtLoc->execute([$locacion['id'], $locacion['name'], $locacion['type'], $locacion['dimension']]);
+    }
 
-$json_guardado = $resultado['datos_json']; 
+   
+    echo "\n--- descargando episodes ---\n";
+    $pisodioisodios = obtenerdatos('https://rickandmortyapi.com/api/episode');
+    
+    $stmtEp = $conexion->prepare("INSERT IGNORE INTO EPISODE (id_episode, name, air_date, episode) VALUES (?, ?, ?, ?)");
+    
+    foreach ($pisodioisodios as $pisodio) {
+        $stmtEp->execute([$pisodio['id'], $pisodio['name'], $pisodio['air_date'], $pisodio['episode']]);
+    }
 
-//se convierte el json en un array
-$datos_php = json_decode($json_guardado, true);
+ 
+    echo "\n--- descargando characters ---\n";
+    $personajes = obtenerdatos('https://rickandmortyapi.com/api/character');
+    
+    $stmtChar = $conexion->prepare("INSERT IGNORE INTO CHARACTERS (id_character, name, status, species, type, gender, image, id_origin_location, id_current_location) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmtRelacion = $conexion->prepare("INSERT IGNORE INTO CHARACTERS_EPISODE (id_character, id_episode) VALUES (?, ?)");
+
+    foreach ($personajes as $personaje) {
+        
+        $id_origen = !empty($personaje['origin']['url']) ? basename($personaje['origin']['url']) : null;
+        $id_locacion = !empty($personaje['location']['url']) ? basename($personaje['location']['url']) : null;
+
+      
+        $stmtChar->execute([
+            $personaje['id'],
+            $personaje['name'],
+            $personaje['status'],
+            $personaje['species'],
+            $personaje['type'],
+            $personaje['gender'],
+            $personaje['image'],
+            $id_origen,
+            $id_locacion
+        ]);
+
+  
+        foreach ($personaje['episode'] as $urlEpisodio) {
+            $id_episodio = basename($urlEpisodio); 
+            $stmtRelacion->execute([$personaje['id'], $id_episodio]);
+        }
+    }
+
+    echo "\nProceso completo \n";
+
+} catch (PDOException $e) {
+    echo "Error en la base de datos: " . $e->getMessage();
+}
 
 ?>
-
