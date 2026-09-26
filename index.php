@@ -6,21 +6,22 @@ require_once 'config.php';
 // ====================================================================
 if (isset($_GET['ajax_id'])) {
     header('Content-Type: application/json; charset=utf-8');
-    $id = (int)$_GET['ajax_id'];$sqlDetalle = "
-        SELECT c.id_character, c.name, c.status, c.species, c.type, c.gender, c.image, o.name AS origin_name
+    $id = (int)$_GET['ajax_id'];
+    $sqlDetalle = "
+        SELECT c.id, c.name, c.status, c.species, c.type, c.gender, c.image, o.name AS origin_name
         FROM CHARACTERS c
-        LEFT JOIN LOCATION o ON c.id_origin_location = o.id_location
-        WHERE c.id_character = ?
+        LEFT JOIN LOCATION o ON c.id_origin_location = o.id
+        WHERE c.id = ?
     ";
     $stmtDetalle = $conexion->prepare($sqlDetalle);
     $stmtDetalle->execute([$id]);
     $personaje =$stmtDetalle->fetch(PDO::FETCH_ASSOC);
 
     if ($personaje) {
-        $stmtEp =$conexion->prepare("
+        $stmtEp = $conexion->prepare("
             SELECT e.name, e.episode FROM EPISODE e
-            JOIN CHARACTERS_EPISODE ce ON e.id_episode = ce.id_episode
-            WHERE ce.id_character = ? ORDER BY e.id_episode ASC
+            JOIN CHARACTERS_EPISODE ce ON e.id = ce.id_episode
+            WHERE ce.id_character = ? ORDER BY e.id ASC
         ");
         $stmtEp->execute([$id]);
         $episodios =$stmtEp->fetchAll(PDO::FETCH_ASSOC);
@@ -42,10 +43,10 @@ $temporadas =$stmtTemporadas->fetchAll(PDO::FETCH_COLUMN);
 $temporadaActual = isset($_GET['season']) ?$_GET['season'] : (isset($temporadas[0]) ?$temporadas[0] : 'S01');
 
 $sqlChars = "
-    SELECT DISTINCT c.id_character, c.name 
+    SELECT DISTINCT c.id, c.name 
     FROM CHARACTERS c
-    JOIN CHARACTERS_EPISODE ce ON c.id_character = ce.id_character
-    JOIN EPISODE e ON ce.id_episode = e.id_episode
+    JOIN CHARACTERS_EPISODE ce ON c.id = ce.id_character
+    JOIN EPISODE e ON ce.id_episode = e.id
     WHERE e.episode LIKE ?
     ORDER BY c.name ASC
 ";
