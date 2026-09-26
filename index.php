@@ -138,8 +138,8 @@ $personajes =$stmtChars->fetchAll(PDO::FETCH_ASSOC);
                 <div class="dato"><span class="etiqueta">Gender</span><span id="charGender" class="valor"></span></div>
                 <div class="dato"><span class="etiqueta">Origin</span><span id="charOrigin" class="valor"></span></div>
                 <div class="dato"><span class="etiqueta">Type</span><span id="charType" class="valor"></span></div>
-               <!-- <div class="dato"><span class="etiqueta">First Episode</span><span id="charFirstEp" class="valor"></span></div> -->
-               <!-- <div class="dato"><span class="etiqueta">Last Seen</span><span id="charLastEp" class="valor"></span></div>
+               <div class="dato"><span class="etiqueta">First Episode</span><span id="charFirstEp" class="valor"></span></div>
+                <div class="dato"><span class="etiqueta">Last Seen</span><span id="charLastEp" class="valor"></span></div>
             </div>
         </div>
 
