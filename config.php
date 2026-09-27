@@ -3,7 +3,7 @@
 $ipBD = "127.0.0.1";
 $usuarioBD = "root"; 
 $claveBD = "admin";            
-$nombreBD = "rick_and_morty"; 
+$nombreBD = "rick_and_morty1"; 
 try {
     $conexion = new PDO("mysql:host=" . $ipBD . ";dbname=" . $nombreBD, $usuarioBD, $claveBD);
     

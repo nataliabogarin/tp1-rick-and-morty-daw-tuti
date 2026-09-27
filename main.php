@@ -18,6 +18,7 @@ function obtenerdatos($urlInicial) {
         $datos = json_decode($respuesta, true);
         $todosLosdatos = array_merge($todosLosdatos, $datos['results']);
         $urlSiguiente = $datos['info']['next'];
+        usleep(300000);
     }
     return $todosLosdatos;
 }
