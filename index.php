@@ -1,13 +1,12 @@
 <?php
 require_once 'config.php';
-// require_once 'main.php';
+
 // ====================================================================
 // 1. RESPUESTA PARA EL JAVASCRIPT (Solo se ejecuta al tocar un botón)
 // ====================================================================
 if (isset($_GET['ajax_id'])) {
     header('Content-Type: application/json; charset=utf-8');
-    $id = (int)$_GET['ajax_id'];
-    $sqlDetalle = "
+    $id = (int)$_GET['ajax_id'];$sqlDetalle = "
         SELECT c.id_character, c.name, c.status, c.species, c.type, c.gender, c.image, o.name AS origin_name
         FROM CHARACTERS c
         LEFT JOIN LOCATION o ON c.id_origin_location = o.id_location
@@ -18,10 +17,10 @@ if (isset($_GET['ajax_id'])) {
     $personaje =$stmtDetalle->fetch(PDO::FETCH_ASSOC);
 
     if ($personaje) {
-        $stmtEp = $conexion->prepare("
+        $stmtEp =$conexion->prepare("
             SELECT e.name, e.episode FROM EPISODE e
             JOIN CHARACTERS_EPISODE ce ON e.id_episode = ce.id_episode
-            WHERE ce.id_character = ? ORDER BY e.id ASC
+            WHERE ce.id_character = ? ORDER BY e.id_episode ASC
         ");
         $stmtEp->execute([$id]);
         $episodios =$stmtEp->fetchAll(PDO::FETCH_ASSOC);
@@ -139,15 +138,15 @@ $personajes =$stmtChars->fetchAll(PDO::FETCH_ASSOC);
                 <div class="dato"><span class="etiqueta">Gender</span><span id="charGender" class="valor"></span></div>
                 <div class="dato"><span class="etiqueta">Origin</span><span id="charOrigin" class="valor"></span></div>
                 <div class="dato"><span class="etiqueta">Type</span><span id="charType" class="valor"></span></div>
-                <!-- <div class="dato"><span class="etiqueta">First Episode</span><span id="charFirstEp" class="valor"></span></div> -->
-                <!-- <div class="dato"><span class="etiqueta">Last Seen</span><span id="charLastEp" class="valor"></span></div> -->
+               <div class="dato"><span class="etiqueta">First Episode</span><span id="charFirstEp" class="valor"></span></div>
+                <div class="dato"><span class="etiqueta">Last Seen</span><span id="charLastEp" class="valor"></span></div>
             </div>
         </div>
 
     </div>
 
-<!--     EL ÚNICO JAVASCRIPT (Solo para los botones)-->
-     <script>
+<!--     EL ÚNICO JAVASCRIPT (Solo para los botones)-->    
+    <script>
         async function verDetallePersonaje(boton) {
             // 1. Remarcamos visualmente el botón seleccionado
             document.querySelectorAll('.btn-personaje').forEach(b => b.classList.remove('activo'));
