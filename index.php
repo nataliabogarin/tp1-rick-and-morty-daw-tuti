@@ -74,7 +74,11 @@ $personajes =$stmtChars->fetchAll(PDO::FETCH_ASSOC);
         
         .panel-izquierdo { width: 300px; background-color: #1a1e24; border: 1px solid #2d333b; padding: 15px; border-radius: 8px; display: flex; flex-direction: column; }
         .form-temporada select { width: 100%; padding: 8px; background: #0f1216; color: white; border: 1px solid #3b4252; margin-bottom: 15px; cursor: pointer;}
-        
+        #buscadorPersonaje { width: 100%; box-sizing: border-box; padding: 8px; background: #0f1216; color: white; border: 1px solid #3b4252; margin-bottom: 10px;
+}
+        #buscadorPersonaje::placeholder { color: #94a3b8;
+}
+
         .lista-personajes { list-style: none; margin: 0; padding: 0; max-height: 500px; overflow-y: auto; border: 1px solid #282e38; background: #14171d; }
         
         /* Convertimos los enlaces en botones HTML puros */
@@ -118,6 +122,11 @@ $personajes =$stmtChars->fetchAll(PDO::FETCH_ASSOC);
                 </select>
             </form>
     <label class="etiqueta" style="margin-bottom: 5px;">Personaje:</label>
+            <input 
+            type="text" 
+            id="buscadorPersonaje" 
+            placeholder="Buscar personaje..."
+>
             <ul class="lista-personajes">
               
                 <?php foreach ($personajes as$p): ?>
@@ -132,6 +141,9 @@ $personajes =$stmtChars->fetchAll(PDO::FETCH_ASSOC);
                     <li style="padding:10px; color:gray;">Sin resultados</li>
                 <?php endif; ?>
             </ul>
+             <p id="sinResultados" style="display: none;">
+                  Sin resultados
+             </p>    
         </div>
 
         <!-- Panel Derecho: Creado vacío, se llena con JS -->
@@ -156,6 +168,44 @@ $personajes =$stmtChars->fetchAll(PDO::FETCH_ASSOC);
 
     <!-- EL ÚNICO JAVASCRIPT (Solo para los botones) -->
     <script>
+        const buscador = document.getElementById('buscadorPersonaje');
+    const sinResultados = document.getElementById('sinResultados');
+
+    buscador.addEventListener('input', function () {
+
+        // Normalizamos lo escrito en el buscador
+        const textoBuscado = buscador.value
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .trim();
+
+        const personajes = document.querySelectorAll('.lista-personajes li');
+        let coincidencias = 0;
+
+        personajes.forEach(personaje => {
+
+            // Normalizamos también el nombre del personaje
+            const nombre = personaje.textContent
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "");
+
+            if (nombre.includes(textoBuscado)) {
+                personaje.style.display = '';
+                coincidencias++;
+            } else {
+                personaje.style.display = 'none';
+            }
+        });
+
+        // Si no encontramos ningún personaje, mostramos el mensaje
+        if (coincidencias === 0) {
+            sinResultados.style.display = 'block';
+        } else {
+            sinResultados.style.display = 'none';
+        }
+    });
         async function verDetallePersonaje(boton) {
             // 1. Remarcamos visualmente el botón seleccionado
             document.querySelectorAll('.btn-personaje').forEach(b => b.classList.remove('activo'));
