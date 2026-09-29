@@ -26,8 +26,14 @@ try {
     echo "\n--- descargando locations ---\n";
     $locaciones = obtenerdatos('https://rickandmortyapi.com/api/location');
     
-    $conexion->beginTransaction(); 
-    $stmtLoc = $conexion->prepare("INSERT IGNORE INTO LOCATION (id_location, name, type, dimension) VALUES (?, ?, ?, ?)");
+    $conexion->beginTransaction();
+    $stmtLoc = $conexion->prepare("INSERT INTO LOCATION (id_location,name,type,dimension)
+    VALUES (?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+        name = VALUES(name),
+        type = VALUES(type),
+        dimension = VALUES(dimension)
+");
     foreach ($locaciones as $locacion) {
         $stmtLoc->execute([$locacion['id'], $locacion['name'], $locacion['type'], $locacion['dimension']]);
     }
@@ -38,7 +44,13 @@ try {
     $episodios = obtenerdatos('https://rickandmortyapi.com/api/episode');
     
     $conexion->beginTransaction(); 
-    $stmtEp = $conexion->prepare("INSERT IGNORE INTO EPISODE (id_episode, name, air_date, episode) VALUES (?, ?, ?, ?)");
+    $stmtEp = $conexion->prepare("INSERT INTO EPISODE ( id_episode, name, air_date, episode)
+    VALUES (?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+        name = VALUES(name),
+        air_date = VALUES(air_date),
+        episode = VALUES(episode)
+");
     foreach ($episodios as $episodio) {
         $stmtEp->execute([$episodio['id'], $episodio['name'], $episodio['air_date'], $episodio['episode']]);
     }
@@ -48,8 +60,21 @@ try {
     echo "\n--- descargando characters ---\n";
     $personajes = obtenerdatos('https://rickandmortyapi.com/api/character');
     
-    $conexion->beginTransaction(); 
-    $stmtChar = $conexion->prepare("INSERT IGNORE INTO CHARACTERS (id_character, name, status, species, type, gender, image, id_origin_location, id_current_location) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $conexion->beginTransaction();
+
+    $stmtChar = $conexion->prepare("INSERT INTO CHARACTERS (id_character,name,status,species,type,gender,image,id_origin_location,id_current_location)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+        name = VALUES(name),
+        status = VALUES(status),
+        species = VALUES(species),
+        type = VALUES(type),
+        gender = VALUES(gender),
+        image = VALUES(image),
+        id_origin_location = VALUES(id_origin_location),
+        id_current_location = VALUES(id_current_location)
+");
+    
     $stmtRelacion = $conexion->prepare("INSERT IGNORE INTO CHARACTERS_EPISODE (id_character, id_episode) VALUES (?, ?)");
 
     foreach ($personajes as $personaje) {
