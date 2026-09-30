@@ -638,6 +638,10 @@ body {
     margin-top: 0;
 }
 
+.intro .logo-app {
+    margin-bottom: 14px;
+}
+
 .intro p {
     color: #cbd5e1;
 }

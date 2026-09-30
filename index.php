@@ -1,6 +1,41 @@
 <?php
 require_once 'config.php';
 
+if (isset($_GET['reset_bd'])) {
+    header('Content-Type: text/plain; charset=utf-8');
+
+    $tokenRecibido = isset($_GET['token']) ? $_GET['token'] : '';
+
+    if ($tokenResetBD === '') {
+        http_response_code(403);
+        error_log("Reset BD deshabilitado. Configurar tokenResetBD en config.php.");
+        exit;
+    }
+
+    if (!hash_equals($tokenResetBD, $tokenRecibido)) {
+        http_response_code(403);
+        error_log("Reset BD rechazado: token incorrecto.");
+        exit;
+    }
+
+    try {
+        $conexion->exec("SET FOREIGN_KEY_CHECKS=0");
+        $conexion->exec("TRUNCATE TABLE CHARACTERS_EPISODE");
+        $conexion->exec("TRUNCATE TABLE CHARACTERS");
+        $conexion->exec("TRUNCATE TABLE EPISODE");
+        $conexion->exec("TRUNCATE TABLE LOCATION");
+        $conexion->exec("SET FOREIGN_KEY_CHECKS=1");
+
+        error_log("Base de datos reiniciada correctamente.");
+    } catch (PDOException $e) {
+        $conexion->exec("SET FOREIGN_KEY_CHECKS=1");
+        http_response_code(500);
+        error_log("No se pudo reiniciar la base de datos: " . $e->getMessage());
+    }
+
+    exit;
+}
+
 $mensajeSincronizacion = '';
 $stmtCantidad = $conexion->query("SELECT COUNT(*) FROM CHARACTERS");
 $cantidadPersonajes = $stmtCantidad->fetchColumn();
@@ -96,7 +131,7 @@ if ($cantidadPersonajes > 0) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rick and Morty - Híbrido</title>
+    <title>Rick and Morty - Explorador Interdimensional</title>
     <link rel="stylesheet" href="assets/css/rick-morty-animations.css">
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
@@ -104,7 +139,7 @@ if ($cantidadPersonajes > 0) {
 
     <?php if ($cantidadPersonajes == 0): ?>
         <div class="intro">
-            <h1>Rick and Morty</h1>
+            <img src="assets/img/logo_Rick_and_Morty.svg.webp" alt="Rick and Morty" class="logo-app">
             <p>Todavía no hay personajes cargados.</p>
             <p>Para empezar, importá los datos desde la API.</p>
             <form method="POST" action="index.php" id="formImportar">
