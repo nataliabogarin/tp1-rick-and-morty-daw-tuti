@@ -32,6 +32,8 @@ function obtenerdatos($urlInicial) {
 
 function sincronizarPersonajes($conexion, $porcentajePersonajes = 100) {
     try {
+        $stmtAntes = $conexion->query("SELECT COUNT(*) FROM CHARACTERS");
+        $cantidadAntes = $stmtAntes->fetchColumn();
 
         $locaciones = obtenerdatos('https://rickandmortyapi.com/api/location');
 
@@ -105,13 +107,16 @@ function sincronizarPersonajes($conexion, $porcentajePersonajes = 100) {
         }
         $conexion->commit(); // <-- GUARDAMOS LOS 3000 REGISTROS DE GOLPE
 
-        return true;
+        $stmtDespues = $conexion->query("SELECT COUNT(*) FROM CHARACTERS");
+        $cantidadDespues = $stmtDespues->fetchColumn();
+
+        return $cantidadDespues - $cantidadAntes;
 
     } catch (PDOException $e) {
         if ($conexion->inTransaction()) {
             $conexion->rollBack(); // Si hay error, cancelamos la caja para no corromper la BD
         }
-        return false;
+        return -1;
     }
 }
 

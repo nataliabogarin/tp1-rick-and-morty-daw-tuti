@@ -5,10 +5,10 @@ body {
     background:
         radial-gradient(circle at top left, rgba(123, 220, 57, 0.14), transparent 28%),
         linear-gradient(135deg, #10151a, #151821, #0d1117, #12301f);
-    background-size: 220% 220%;
+    background-size: 320% 320%;
     color: #e2e8f0;
     min-height: 100vh;
-    animation: fondoMovimiento 12s ease infinite;
+    animation: fondoMovimiento 8s ease infinite;
 }
 
 @keyframes fondoMovimiento {
@@ -69,6 +69,7 @@ body {
     max-width: 1000px;
     margin: 0 auto 14px;
     display: flex;
+    flex-direction: column;
     justify-content: flex-end;
     align-items: center;
     gap: 12px;
@@ -165,6 +166,7 @@ body {
     background: #0f2f1d;
     color: #86efac;
     font-size: 0.9rem;
+    text-align: center;
 }
 
 .intro .mensaje-sincronizacion {
@@ -513,6 +515,7 @@ body {
     .acciones-app {
         display: block;
         margin-bottom: 14px;
+        text-align: center;
     }
 
     .form-sincronizar {
