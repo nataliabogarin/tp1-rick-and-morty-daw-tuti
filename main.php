@@ -8,7 +8,7 @@ function obtenerdatos($urlInicial) {
     while ($urlSiguiente !== null) {
         echo "Descargando: " . $urlSiguiente . "...\n";
         $respuesta = file_get_contents($urlSiguiente);
-        
+
         if ($respuesta === false) {
             echo "Error al descargar: $urlSiguiente\n";
             break;
@@ -22,34 +22,59 @@ function obtenerdatos($urlInicial) {
 }
 
 try {
-   
+
     echo "\n--- descargando locations ---\n";
     $locaciones = obtenerdatos('https://rickandmortyapi.com/api/location');
-    
-    $conexion->beginTransaction(); 
-    $stmtLoc = $conexion->prepare("INSERT IGNORE INTO LOCATION (id_location, name, type, dimension) VALUES (?, ?, ?, ?)");
+
+    $conexion->beginTransaction();
+    $stmtLoc = $conexion->prepare("INSERT INTO LOCATION (id_location,name,type,dimension)
+    VALUES (?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+        name = VALUES(name),
+        type = VALUES(type),
+        dimension = VALUES(dimension)
+");
     foreach ($locaciones as $locacion) {
         $stmtLoc->execute([$locacion['id'], $locacion['name'], $locacion['type'], $locacion['dimension']]);
     }
-    $conexion->commit(); 
+    $conexion->commit();
 
-  
+
     echo "\n--- descargando episodes ---\n";
     $episodios = obtenerdatos('https://rickandmortyapi.com/api/episode');
-    
-    $conexion->beginTransaction(); 
-    $stmtEp = $conexion->prepare("INSERT IGNORE INTO EPISODE (id_episode, name, air_date, episode) VALUES (?, ?, ?, ?)");
+
+    $conexion->beginTransaction();
+    $stmtEp = $conexion->prepare("INSERT INTO EPISODE ( id_episode, name, air_date, episode)
+    VALUES (?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+        name = VALUES(name),
+        air_date = VALUES(air_date),
+        episode = VALUES(episode)
+");
     foreach ($episodios as $episodio) {
         $stmtEp->execute([$episodio['id'], $episodio['name'], $episodio['air_date'], $episodio['episode']]);
     }
-    $conexion->commit(); 
+    $conexion->commit();
 
-   
+
     echo "\n--- descargando characters ---\n";
     $personajes = obtenerdatos('https://rickandmortyapi.com/api/character');
-    
-    $conexion->beginTransaction(); 
-    $stmtChar = $conexion->prepare("INSERT IGNORE INTO CHARACTERS (id_character, name, status, species, type, gender, image, id_origin_location, id_current_location) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+    $conexion->beginTransaction();
+
+    $stmtChar = $conexion->prepare("INSERT INTO CHARACTERS (id_character,name,status,species,type,gender,image,id_origin_location,id_current_location)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+        name = VALUES(name),
+        status = VALUES(status),
+        species = VALUES(species),
+        type = VALUES(type),
+        gender = VALUES(gender),
+        image = VALUES(image),
+        id_origin_location = VALUES(id_origin_location),
+        id_current_location = VALUES(id_current_location)
+");
+
     $stmtRelacion = $conexion->prepare("INSERT IGNORE INTO CHARACTERS_EPISODE (id_character, id_episode) VALUES (?, ?)");
 
     foreach ($personajes as $personaje) {
@@ -62,7 +87,7 @@ try {
         ]);
 
         foreach ($personaje['episode'] as $urlEpisodio) {
-            $id_episodio = basename($urlEpisodio); 
+            $id_episodio = basename($urlEpisodio);
             $stmtRelacion->execute([$personaje['id'], $id_episodio]);
         }
     }
