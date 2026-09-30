@@ -1,6 +1,18 @@
 <?php
 require_once 'config.php';
 
+$mensajeSincronizacion = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sincronizar_personajes'])) {
+    require_once 'main.php';
+
+    if (sincronizarPersonajes($conexion)) {
+        $mensajeSincronizacion = 'Personajes sincronizados correctamente.';
+    } else {
+        $mensajeSincronizacion = 'No se pudo completar la sincronización.';
+    }
+}
+
 // ====================================================================
 // 1. RESPUESTA PARA EL JAVASCRIPT (Solo se ejecuta al tocar un botón)
 // ====================================================================
@@ -44,22 +56,31 @@ if (isset($_GET['ajax_id'])) {
 // ====================================================================
 // 2. CÓDIGO NORMAL DE PHP (Carga inicial de la página)
 // ====================================================================
-$stmtTemporadas =$conexion->query("SELECT DISTINCT SUBSTRING(episode, 1, 3) AS season_code FROM EPISODE ORDER BY season_code ASC");
-$temporadas =$stmtTemporadas->fetchAll(PDO::FETCH_COLUMN);
+$stmtCantidad = $conexion->query("SELECT COUNT(*) FROM CHARACTERS");
+$cantidadPersonajes = $stmtCantidad->fetchColumn();
 
-$temporadaActual = isset($_GET['season']) ?$_GET['season'] : (isset($temporadas[0]) ?$temporadas[0] : 'S01');
+$temporadas = [];
+$personajes = [];
+$temporadaActual = 'S01';
 
-$sqlChars = "
-    SELECT DISTINCT c.id_character, c.name
-    FROM CHARACTERS c
-    JOIN CHARACTERS_EPISODE ce ON c.id_character = ce.id_character
-    JOIN EPISODE e ON ce.id_episode = e.id_episode
-    WHERE e.episode LIKE ?
-    ORDER BY c.name ASC
-";
-$stmtChars = $conexion->prepare($sqlChars);
-$stmtChars->execute([$temporadaActual . '%']);
-$personajes =$stmtChars->fetchAll(PDO::FETCH_ASSOC);
+if ($cantidadPersonajes > 0) {
+    $stmtTemporadas =$conexion->query("SELECT DISTINCT SUBSTRING(episode, 1, 3) AS season_code FROM EPISODE ORDER BY season_code ASC");
+    $temporadas =$stmtTemporadas->fetchAll(PDO::FETCH_COLUMN);
+
+    $temporadaActual = isset($_GET['season']) ?$_GET['season'] : (isset($temporadas[0]) ?$temporadas[0] : 'S01');
+
+    $sqlChars = "
+        SELECT DISTINCT c.id_character, c.name
+        FROM CHARACTERS c
+        JOIN CHARACTERS_EPISODE ce ON c.id_character = ce.id_character
+        JOIN EPISODE e ON ce.id_episode = e.id_episode
+        WHERE e.episode LIKE ?
+        ORDER BY c.name ASC
+    ";
+    $stmtChars = $conexion->prepare($sqlChars);
+    $stmtChars->execute([$temporadaActual . '%']);
+    $personajes =$stmtChars->fetchAll(PDO::FETCH_ASSOC);
+}
 ?>
 
 <!DOCTYPE html>
@@ -68,48 +89,43 @@ $personajes =$stmtChars->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rick and Morty - Híbrido</title>
-    <style>
-        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #121418; color: #e2e8f0; }
-        .contenedor { display: flex; gap: 20px; max-width: 1000px; margin: 0 auto; }
-
-        .panel-izquierdo { width: 300px; background-color: #1a1e24; border: 1px solid #2d333b; padding: 15px; border-radius: 8px; display: flex; flex-direction: column; }
-        .form-temporada select { width: 100%; padding: 8px; background: #0f1216; color: white; border: 1px solid #3b4252; margin-bottom: 15px; cursor: pointer;}
-        #buscadorPersonaje { width: 100%; box-sizing: border-box; padding: 8px; background: #0f1216; color: white; border: 1px solid #3b4252; margin-bottom: 10px;
-}
-        #buscadorPersonaje::placeholder { color: #94a3b8;
-}
-
-        .lista-personajes { list-style: none; margin: 0; padding: 0; max-height: 500px; overflow-y: auto; border: 1px solid #282e38; background: #14171d; }
-
-        /* Convertimos los enlaces en botones HTML puros */
-        .btn-personaje { width: 100%; text-align: left; padding: 10px; background: none; color: #cbd5e1; border: none; border-bottom: 1px solid #1f242d; cursor: pointer; font-size: 1rem; }
-        .btn-personaje:hover { background-color: #242a35; }
-        .btn-personaje.activo { background-color: #2563eb; color: white; font-weight: bold; }
-
-        .panel-derecho { flex: 1; display: flex; gap: 20px; background-color: #1a1e24; border: 1px solid #2d333b; padding: 20px; border-radius: 8px; min-height: 400px;}
-        .foto img { width: 200px; border-radius: 8px; border: 2px solid #374151; background: #0f1216; }
-        .info { flex: 1; }
-        .info h2 { margin-top: 0; border-bottom: 1px solid #2d333b; padding-bottom: 10px; }
-
-        .dato { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #21262d; font-size: 0.9rem; }
-        .etiqueta { color: #94a3b8; font-weight: bold; text-transform: uppercase; font-size: 0.8rem; }
-        .valor { text-align: right; }
-
-        .badge { padding: 3px 8px; border-radius: 4px; font-weight: bold; }
-        .badge.Alive { background: #166534; color: #86efac; }
-        .badge.Dead { background: #991b1b; color: #fca5a5; }
-        .badge.unknown { background: #374151; color: #d1d5db; }
-    </style>
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
-<body>
+<body class="<?= $cantidadPersonajes == 0 ? 'body-inicio' : '' ?>">
 
+    <?php if ($cantidadPersonajes == 0): ?>
+        <div class="intro">
+            <h1>Rick and Morty</h1>
+            <p>Todavía no hay personajes cargados.</p>
+            <p>Para empezar, importá los datos desde la API.</p>
+            <form method="POST" action="index.php" id="formImportar">
+                <input type="hidden" name="sincronizar_personajes" value="1">
+                <button type="submit" class="btn-sincronizar btn-importar" id="btnImportar">
+                    Importar personajes
+                </button>
+            </form>
+            <div class="carga-inicial oculto" id="cargaInicial">
+                <p>Importando personajes...</p>
+                <p id="mensajeCarga">Viajando por universos desconocidos...</p>
+                <div class="portal-carga"></div>
+            </div>
+            <?php if ($mensajeSincronizacion !== ''): ?>
+                <p class="mensaje-sincronizacion" id="mensajeSincronizacion"><?= htmlspecialchars($mensajeSincronizacion) ?></p>
+            <?php endif; ?>
+        </div>
+    <?php else: ?>
 
+    <header class="encabezado-app">
+        <h1>Rick and Morty</h1>
+        <p>Explorador de personajes por temporada</p>
+    </header>
 
     <div class="contenedor">
 
         <!-- Panel Izquierdo -->
         <div class="panel-izquierdo">
-            <label class="etiqueta" style="margin-bottom: 5px;">Seleccionar Temporada:</label>
+            <h2 class="titulo-panel">Filtros</h2>
+            <label class="etiqueta label-formulario">Seleccionar Temporada:</label>
             <form method="GET" action="index.php" class="form-temporada">
                 <!-- JAVASCRIPT: onchange="this.form.submit()" envía el formulario automáticamente al elegir otra opción -->
                 <select id="seasonSelect" name="season" onchange="this.form.submit()">
@@ -121,7 +137,16 @@ $personajes =$stmtChars->fetchAll(PDO::FETCH_ASSOC);
                     <?php endforeach; ?>
                 </select>
             </form>
-    <label class="etiqueta" style="margin-bottom: 5px;">Personaje:</label>
+            <form method="POST" action="index.php?season=<?= htmlspecialchars($temporadaActual) ?>" class="form-sincronizar">
+                <input type="hidden" name="sincronizar_personajes" value="1">
+                <button type="submit" class="btn-sincronizar">
+                    Sincronizar personajes
+                </button>
+            </form>
+            <?php if ($mensajeSincronizacion !== ''): ?>
+                <p class="mensaje-sincronizacion" id="mensajeSincronizacion"><?= htmlspecialchars($mensajeSincronizacion) ?></p>
+            <?php endif; ?>
+    <label class="etiqueta label-formulario">Personaje:</label>
             <input
             type="text"
             id="buscadorPersonaje"
@@ -138,16 +163,16 @@ $personajes =$stmtChars->fetchAll(PDO::FETCH_ASSOC);
                     </li>
                 <?php endforeach; ?>
                 <?php if (empty($personajes)): ?>
-                    <li style="padding:10px; color:gray;">Sin resultados</li>
+                    <li class="sin-resultados-item">Sin resultados</li>
                 <?php endif; ?>
             </ul>
-             <p id="sinResultados" style="display: none;">
+             <p id="sinResultados" class="oculto">
                   Sin resultados
              </p>
         </div>
 
         <!-- Panel Derecho: Creado vacío, se llena con JS -->
-        <div class="panel-derecho" id="panelDetalles" style="display: none;">
+        <div class="panel-derecho oculto" id="panelDetalles">
             <div class="foto">
                 <img id="charImg" src="" alt="Foto">
             </div>
@@ -247,6 +272,49 @@ $personajes =$stmtChars->fetchAll(PDO::FETCH_ASSOC);
             if (primerBoton) primerBoton.click();
         };
     </script>
+    <?php endif; ?>
 
+<?php if ($cantidadPersonajes == 0): ?>
+    <script>
+        const formImportar = document.getElementById('formImportar');
+        const btnImportar = document.getElementById('btnImportar');
+        const cargaInicial = document.getElementById('cargaInicial');
+        const mensajeCarga = document.getElementById('mensajeCarga');
+        const frasesCarga = [
+            'Viajando por universos desconocidos...',
+            'Abriendo portal interdimensional...',
+            'Buscando personajes en la Ciudadela...',
+            'Cargando episodios desde otra dimensión...',
+            'Sincronizando realidades alternativas...',
+            'Consultando al Consejo de Ricks...',
+            'Atravesando la curva finita central...',
+            'Revisando archivos de Mortys perdidos...'
+        ];
+
+        formImportar.addEventListener('submit', function () {
+            let numeroFrase = 0;
+
+            btnImportar.disabled = true;
+            btnImportar.textContent = 'Importando...';
+            cargaInicial.classList.remove('oculto');
+
+            setInterval(function () {
+                numeroFrase++;
+                mensajeCarga.textContent = frasesCarga[numeroFrase % frasesCarga.length];
+            }, 1800);
+        });
+    </script>
+<?php endif; ?>
+<?php if ($mensajeSincronizacion !== ''): ?>
+    <script>
+        setTimeout(function () {
+            const mensaje = document.getElementById('mensajeSincronizacion');
+
+            if (mensaje) {
+                mensaje.classList.add('oculto');
+            }
+        }, 10000);
+    </script>
+<?php endif; ?>
 </body>
 </html>
