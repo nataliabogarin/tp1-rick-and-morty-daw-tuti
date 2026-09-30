@@ -9,8 +9,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sincronizar_personaje
     require_once 'main.php';
     $porcentajePersonajes = $cantidadPersonajes == 0 ? 70 : 100;
 
-    if (sincronizarPersonajes($conexion, $porcentajePersonajes)) {
-        $mensajeSincronizacion = 'Personajes sincronizados correctamente.';
+    $personajesNuevos = sincronizarPersonajes($conexion, $porcentajePersonajes);
+
+    if ($personajesNuevos > 0) {
+        $mensajeSincronizacion = $personajesNuevos . ' personajes sincronizados al multiverso.';
+        $stmtCantidad = $conexion->query("SELECT COUNT(*) FROM CHARACTERS");
+        $cantidadPersonajes = $stmtCantidad->fetchColumn();
+    } else if ($personajesNuevos == 0) {
+        $mensajeSincronizacion = 'No hay personajes nuevos para sincronizar.';
         $stmtCantidad = $conexion->query("SELECT COUNT(*) FROM CHARACTERS");
         $cantidadPersonajes = $stmtCantidad->fetchColumn();
     } else {
