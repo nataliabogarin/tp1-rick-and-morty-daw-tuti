@@ -2,12 +2,17 @@
 require_once 'config.php';
 
 $mensajeSincronizacion = '';
+$stmtCantidad = $conexion->query("SELECT COUNT(*) FROM CHARACTERS");
+$cantidadPersonajes = $stmtCantidad->fetchColumn();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sincronizar_personajes'])) {
     require_once 'main.php';
+    $porcentajePersonajes = $cantidadPersonajes == 0 ? 70 : 100;
 
-    if (sincronizarPersonajes($conexion)) {
+    if (sincronizarPersonajes($conexion, $porcentajePersonajes)) {
         $mensajeSincronizacion = 'Personajes sincronizados correctamente.';
+        $stmtCantidad = $conexion->query("SELECT COUNT(*) FROM CHARACTERS");
+        $cantidadPersonajes = $stmtCantidad->fetchColumn();
     } else {
         $mensajeSincronizacion = 'No se pudo completar la sincronización.';
     }
@@ -56,9 +61,6 @@ if (isset($_GET['ajax_id'])) {
 // ====================================================================
 // 2. CÓDIGO NORMAL DE PHP (Carga inicial de la página)
 // ====================================================================
-$stmtCantidad = $conexion->query("SELECT COUNT(*) FROM CHARACTERS");
-$cantidadPersonajes = $stmtCantidad->fetchColumn();
-
 $temporadas = [];
 $personajes = [];
 $temporadaActual = 'S01';
@@ -89,9 +91,10 @@ if ($cantidadPersonajes > 0) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rick and Morty - Híbrido</title>
+    <link rel="stylesheet" href="assets/css/rick-morty-animations.css">
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
-<body class="<?= $cantidadPersonajes == 0 ? 'body-inicio' : '' ?>">
+<body class="<?= $cantidadPersonajes == 0 ? 'body-inicio' : 'body-personajes' ?>">
 
     <?php if ($cantidadPersonajes == 0): ?>
         <div class="intro">
@@ -116,9 +119,25 @@ if ($cantidadPersonajes > 0) {
     <?php else: ?>
 
     <header class="encabezado-app">
-        <h1>Rick and Morty</h1>
-        <p>Explorador de personajes por temporada</p>
+        <img src="assets/img/logo_Rick_and_Morty.svg.webp" alt="Rick and Morty" class="logo-app">
     </header>
+
+    <div class="animacion-info">
+        <strong>Explorador interdimensional activo</strong>
+        <span>Seleccioná un personaje para ver su información.</span>
+    </div>
+
+    <div class="acciones-app">
+        <form method="POST" action="index.php?season=<?= htmlspecialchars($temporadaActual) ?>" class="form-sincronizar" id="formSincronizar">
+            <input type="hidden" name="sincronizar_personajes" value="1">
+            <button type="submit" class="btn-sincronizar">
+                Sincronizar personajes
+            </button>
+        </form>
+        <?php if ($mensajeSincronizacion !== ''): ?>
+            <p class="mensaje-sincronizacion" id="mensajeSincronizacion"><?= htmlspecialchars($mensajeSincronizacion) ?></p>
+        <?php endif; ?>
+    </div>
 
     <div class="contenedor">
 
@@ -137,21 +156,13 @@ if ($cantidadPersonajes > 0) {
                     <?php endforeach; ?>
                 </select>
             </form>
-            <form method="POST" action="index.php?season=<?= htmlspecialchars($temporadaActual) ?>" class="form-sincronizar">
-                <input type="hidden" name="sincronizar_personajes" value="1">
-                <button type="submit" class="btn-sincronizar">
-                    Sincronizar personajes
-                </button>
-            </form>
-            <?php if ($mensajeSincronizacion !== ''): ?>
-                <p class="mensaje-sincronizacion" id="mensajeSincronizacion"><?= htmlspecialchars($mensajeSincronizacion) ?></p>
-            <?php endif; ?>
     <label class="etiqueta label-formulario">Personaje:</label>
             <input
             type="text"
             id="buscadorPersonaje"
             placeholder="Buscar personaje..."
 >
+            <div class="lista-personajes-contenedor">
             <ul class="lista-personajes">
 
                 <?php foreach ($personajes as$p): ?>
@@ -166,6 +177,7 @@ if ($cantidadPersonajes > 0) {
                     <li class="sin-resultados-item">Sin resultados</li>
                 <?php endif; ?>
             </ul>
+            </div>
              <p id="sinResultados" class="oculto">
                   Sin resultados
              </p>
@@ -191,10 +203,132 @@ if ($cantidadPersonajes > 0) {
 
     </div>
 
+    <div class="personajes-animados">
+        <div class="rick-container">
+            <div class="head-container">
+                <div class="head">
+                    <div class="brow-container">
+                        <div class="brow"></div>
+                    </div>
+                    <div class="eyes-container">
+                        <div class="left eye">
+                            <div class="pupil"></div>
+                        </div>
+                        <div class="right eye">
+                            <div class="pupil"></div>
+                        </div>
+                    </div>
+                    <div class="eyebags-container">
+                        <div class="left eyebag"></div>
+                        <div class="right eyebag"></div>
+                    </div>
+                    <div class="nose"></div>
+                    <div class="mouth-container">
+                        <div class="mouth"></div>
+                        <div class="spittle"></div>
+                        <div class="spittle-arcs"></div>
+                    </div>
+                </div>
+                <div class="ear-container">
+                    <div class="left ear"></div>
+                    <div class="right ear"></div>
+                </div>
+                <div class="hair-container">
+                    <div class="hair"></div>
+                </div>
+                <div class="neck"></div>
+            </div>
+            <div class="body-container">
+                <div class="body">
+                    <div class="shirt">
+                        <div class="flaps-container">
+                            <div class="left flap"></div>
+                            <div class="right flap"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="morty-container">
+            <div class="head-container">
+                <div class="head">
+                    <div class="brows-container">
+                        <div class="left brow"></div>
+                        <div class="right brow"></div>
+                    </div>
+                    <div class="eyes-container">
+                        <div class="left eye">
+                            <div class="pupil"></div>
+                        </div>
+                        <div class="right eye">
+                            <div class="pupil"></div>
+                        </div>
+                    </div>
+                    <div class="nose"></div>
+                    <div class="mouth-container">
+                        <div class="mouth"></div>
+                    </div>
+                </div>
+                <div class="ear-container">
+                    <div class="left ear"></div>
+                    <div class="right ear"></div>
+                </div>
+                <div class="hair-container">
+                    <div class="hair"></div>
+                </div>
+            </div>
+            <div class="body-container">
+                <div class="body"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay-sincronizacion oculto" id="overlaySincronizacion">
+        <div class="overlay-contenido">
+            <p>Sincronizando personajes...</p>
+            <p id="mensajeSincronizacionCarga">Actualizando dimensiones conocidas...</p>
+            <div class="portal-carga portal-sincronizacion"></div>
+        </div>
+    </div>
+
     <!-- EL ÚNICO JAVASCRIPT (Solo para los botones) -->
     <script>
         const buscador = document.getElementById('buscadorPersonaje');
     const sinResultados = document.getElementById('sinResultados');
+    const listaPersonajes = document.querySelector('.lista-personajes');
+    const formSincronizar = document.getElementById('formSincronizar');
+    const overlaySincronizacion = document.getElementById('overlaySincronizacion');
+    const mensajeSincronizacionCarga = document.getElementById('mensajeSincronizacionCarga');
+    const frasesSincronizacion = [
+        'Actualizando dimensiones conocidas...',
+        'Revisando cambios en la Ciudadela...',
+        'Buscando nuevos registros interdimensionales...',
+        'Ordenando episodios y locaciones...',
+        'Conectando con la API del multiverso...'
+    ];
+    let scrollPersonajes;
+
+    formSincronizar.addEventListener('submit', function () {
+        let numeroFrase = 0;
+
+        overlaySincronizacion.classList.remove('oculto');
+
+        setInterval(function () {
+            numeroFrase++;
+            mensajeSincronizacionCarga.textContent = frasesSincronizacion[numeroFrase % frasesSincronizacion.length];
+        }, 1800);
+    });
+
+    listaPersonajes.addEventListener('mouseenter', function () {
+        scrollPersonajes = setInterval(function () {
+            listaPersonajes.scrollTop += 1;
+        }, 35);
+    });
+
+    listaPersonajes.addEventListener('mouseleave', function () {
+        clearInterval(scrollPersonajes);
+    });
 
     buscador.addEventListener('input', function () {
 

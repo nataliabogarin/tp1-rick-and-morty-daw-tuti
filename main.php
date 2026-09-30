@@ -30,7 +30,7 @@ function obtenerdatos($urlInicial) {
     return $todosLosdatos;
 }
 
-function sincronizarPersonajes($conexion) {
+function sincronizarPersonajes($conexion, $porcentajePersonajes = 100) {
     try {
 
         $locaciones = obtenerdatos('https://rickandmortyapi.com/api/location');
@@ -66,6 +66,11 @@ function sincronizarPersonajes($conexion) {
 
 
         $personajes = obtenerdatos('https://rickandmortyapi.com/api/character');
+
+        if ($porcentajePersonajes < 100) {
+            $cantidadACargar = ceil(count($personajes) * $porcentajePersonajes / 100);
+            $personajes = array_slice($personajes, 0, $cantidadACargar);
+        }
 
         $conexion->beginTransaction();
 
